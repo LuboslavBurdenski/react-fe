@@ -45,6 +45,7 @@ const SLanding = styled(Column)`
   height: 600px;
 `;
 
+
 // @ts-ignore
 const SBalances = styled(SLanding)`
   height: 100%;
@@ -53,11 +54,26 @@ const SBalances = styled(SLanding)`
   }
 `;
 
-const WrapperInputs = styled.section`
-  border-radius: 7px;
+const WrapperInputs = styled.div`
   padding: 10px;
-  display: flex;
-  flex-flow: column wrap;
+  border-radius: 8px;
+  background: pink;
+  .submit-form{
+    display: flex;
+    flex-direction: column;
+    input{
+      border: 0;
+      border-radius: 8px;
+      margin: 5px;
+      padding: 5px;
+    }
+    button{
+      border: 0;
+      border-radius: 8px;
+      margin: 5px;
+      padding: 5px;
+    }
+  }
 `;
 
 interface IAppState {
@@ -226,7 +242,6 @@ class App extends React.Component<any, any> {
     // ];
 
     console.log(electionContract)
-
     // await this.setState({ fetching: true });
     // const transaction = await electionContract.submitStateResult(dataArr);
 
@@ -274,17 +289,23 @@ class App extends React.Component<any, any> {
 
           {this.state.showLeader && <section>{this.state.currentLeader}</section>}
           <WrapperInputs>
-            <section >
-              <label htmlFor="name">name</label>
-              <input name="name" placeholder="Chicago" />
-              <label htmlFor="votesB">votes Biden</label>
-              <input name="votesB" placeholder="500" />
-              <label htmlFor="votesT">votes Trump</label>
-              <input name="votesT" placeholder="500" />
-              <label htmlFor="seats">state seats</label>
-              <input name="stateSeats" placeholder="20" />
-            </section>
+            <div >
+
+              <form className='submit-form'>
+                <label htmlFor="name">name</label>
+                <input name="name" placeholder="Chicago" />
+                <label htmlFor="votesB">votes Biden</label>
+                <input name="votesB" placeholder="500" />
+                <label htmlFor="votesT">votes Trump</label>
+                <input name="votesT" placeholder="500" />
+                <label htmlFor="seats">state seats</label>
+                <input name="stateSeats" placeholder="20" />
+                <button>submit election result</button>
+              </form>
+
+            </div>
           </WrapperInputs>
+
 
         </Column>
       </SLayout>
