@@ -11,9 +11,8 @@ import Column from './components/Column';
 import Wrapper from './components/Wrapper';
 import Header from './components/Header';
 import Loader from './components/Loader';
+import ResultsForm from './components/ResultForms';
 import ConnectButton from './components/ConnectButton';
-
-
 import { Web3Provider } from '@ethersproject/providers';
 import { getChainData } from './helpers/utilities';
 
@@ -23,7 +22,6 @@ const SLayout = styled.div`
   min-height: 100vh;
   text-align: center;
 `;
-
 
 const SContent = styled(Wrapper)`
   width: 100%;
@@ -45,34 +43,11 @@ const SLanding = styled(Column)`
   height: 600px;
 `;
 
-
 // @ts-ignore
 const SBalances = styled(SLanding)`
   height: 100%;
   & h3 {
     padding-top: 30px;
-  }
-`;
-
-const WrapperInputs = styled.div`
-  padding: 10px;
-  border-radius: 8px;
-  background: pink;
-  .submit-form{
-    display: flex;
-    flex-direction: column;
-    input{
-      border: 0;
-      border-radius: 8px;
-      margin: 5px;
-      padding: 5px;
-    }
-    button{
-      border: 0;
-      border-radius: 8px;
-      margin: 5px;
-      padding: 5px;
-    }
   }
 `;
 
@@ -88,6 +63,7 @@ interface IAppState {
   info: any | null;
   currentLeader: number | string,
   showLeader: boolean,
+  
 }
 
 const INITIAL_STATE: IAppState = {
@@ -101,7 +77,8 @@ const INITIAL_STATE: IAppState = {
   electionContract: null,
   info: null,
   currentLeader: '',
-  showLeader: false
+  showLeader: false,
+  
 };
 
 class App extends React.Component<any, any> {
@@ -184,7 +161,6 @@ class App extends React.Component<any, any> {
     } else {
       await this.setState({ address: accounts[0] });
     }
-
   }
 
   public networkChanged = async (networkId: number) => {
@@ -217,42 +193,17 @@ class App extends React.Component<any, any> {
     localStorage.removeItem("WEB3_CONNECT_CACHED_PROVIDER");
     localStorage.removeItem("walletconnect");
     await this.unSubscribe(this.provider);
-
     this.setState({ ...INITIAL_STATE });
   };
 
   public currentLeader = async () => {
     const { electionContract } = this.state;
-
     const currentLeader = await electionContract.currentLeader();
-    console.log(this.state.showLeader);
-
     await this.setState({ showLeader: !this.state.showLeader })
     await this.setState({ currentLeader });
   };
 
-  public submitElectionResult = async () => {
-    const { electionContract } = this.state;
-
-    // const dataArr = [
-    //   'Idaho',
-    //   51,
-    //   50,
-    //   24
-    // ];
-
-    console.log(electionContract)
-    // await this.setState({ fetching: true });
-    // const transaction = await electionContract.submitStateResult(dataArr);
-
-    // await this.setState({ transactionHash: transaction.hash });
-
-    // const transactionReceipt = await transaction.wait();
-    // if (transactionReceipt.status !== 1) {
-    //   // React to failure
-    // }
-  };
-
+  
   public render = () => {
     const {
       address,
@@ -270,6 +221,7 @@ class App extends React.Component<any, any> {
             killSession={this.resetApp}
           />
           <SContent>
+
             {fetching ? (
               <Column center>
                 <SContainer>
@@ -281,33 +233,15 @@ class App extends React.Component<any, any> {
                 {!this.state.connected && <ConnectButton onClick={this.onConnect} />}
               </SLanding>
             )}
+
+            <button onClick={this.currentLeader}>check leader</button>
+
+            {this.state.showLeader && <section>{this.state.currentLeader}</section>}
+
+              <ResultsForm electionContract={this.state.electionContract}/>
           </SContent>
         </Column>
-        <Column maxWidth={1000} spanHeight>
-          <button onClick={this.currentLeader}>check leader</button>
-          <button onClick={this.submitElectionResult}>print contract</button>
 
-          {this.state.showLeader && <section>{this.state.currentLeader}</section>}
-          <WrapperInputs>
-            <div >
-
-              <form className='submit-form'>
-                <label htmlFor="name">name</label>
-                <input name="name" placeholder="Chicago" />
-                <label htmlFor="votesB">votes Biden</label>
-                <input name="votesB" placeholder="500" />
-                <label htmlFor="votesT">votes Trump</label>
-                <input name="votesT" placeholder="500" />
-                <label htmlFor="seats">state seats</label>
-                <input name="stateSeats" placeholder="20" />
-                <button>submit election result</button>
-              </form>
-
-            </div>
-          </WrapperInputs>
-
-
-        </Column>
       </SLayout>
     );
   };
