@@ -41,10 +41,11 @@ const SBlockie = styled(Blockie)`
   margin-right: 10px;
 `
 const Leader = styled.span`
-  background: #8affd4;
-  padding: 5px 30px;
-  border-radius: 7px;
-  font-weight: bolder;
+    background: #8affd4;
+    padding: 5px 10px;
+    border-radius: 7px;
+    font-weight: bolder;
+    margin-right: 50px;
 `
 
 interface IHeaderStyle {
@@ -82,15 +83,16 @@ interface IHeaderProps {
   connected: boolean
   address: string
   chainId: number,
-  currentLeader: string | number
+  currentLeader: string | number,
+  seatsBiden: number,
+  seatsTrump: number
 }
 
 const Header = (props: IHeaderProps) => {
-  const { connected, address, chainId, killSession } = props;
-  let {currentLeader} = props
-
-  currentLeader = currentLeader === 0 ? ' Waiting for first state results' :
-    currentLeader === 1 ?' Biden' : ' Trump';
+  const { connected, address, chainId, killSession, seatsBiden, seatsTrump } = props;
+  let { currentLeader } = props;
+  currentLeader = currentLeader === 0 ? 'No leader provided' :
+    currentLeader === 1 ? `Biden` : ` Trump`;
 
   const chainData = chainId ? getChainData(chainId) : null
   return (
@@ -102,9 +104,15 @@ const Header = (props: IHeaderProps) => {
         </SActiveChain>
       ) : 'Not Connected'}
 
+
       <Leader>
-        Leader:
-       <span>{currentLeader}</span>
+        <span>{`Leader: ${currentLeader}`}</span>
+      </Leader>
+      <Leader>
+        <span>{`Biden: ${seatsBiden}`}</span>
+      </Leader>
+      <Leader>
+        <span>{`Trump: ${seatsTrump}`}</span>
       </Leader>
 
       {address && (

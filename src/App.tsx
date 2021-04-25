@@ -17,9 +17,6 @@ import ConnectButton from './components/ConnectButton';
 import { Web3Provider } from '@ethersproject/providers';
 import { getChainData } from './helpers/utilities';
 
-
-
-
 const SLayout = styled.div`
   position: relative;
   width: 100%;
@@ -66,6 +63,8 @@ interface IAppState {
   electionContract: any | null;
   info: any | null;
   currentLeader: number | string,
+  seatsTrump: number,
+  seatsBiden: number,
 }
 
 const INITIAL_STATE: IAppState = {
@@ -78,6 +77,8 @@ const INITIAL_STATE: IAppState = {
   result: null,
   electionContract: null,
   info: null,
+  seatsTrump: 0,
+  seatsBiden: 0,
   currentLeader: '',
 };
 
@@ -202,20 +203,15 @@ class App extends React.Component<any, any> {
   public currentLeader = async () => {
     const { electionContract } = this.state;
     const currentLeader = await electionContract.currentLeader();
+    const seatsBiden = await electionContract.seats(1);
+    const seatsTrump = await electionContract.seats(2);
+
+    await this.setState({ seatsBiden });
+    await this.setState({ seatsTrump });
     await this.setState({ currentLeader });
-    console.log(this.state.currentLeader)
+
   };
 
-
-  public handleChange = async (e: any) => {
-    const name = e.target.name;
-    let value = e.target.value;
-    if (name !== 'state') {
-      value = Number(value);
-    }
-    console.log(name)
-    await this.setState({ [name]: value });
-  }
 
   public handleSubmitResults = async (values: any) => {
     const { state, votesBiden, votesTrump, stateSeats } = values;
@@ -259,17 +255,19 @@ class App extends React.Component<any, any> {
             address={address}
             chainId={chainId}
             killSession={this.resetApp}
+            seatsBiden={this.state.seatsBiden}
+            seatsTrump={this.state.seatsTrump}
             currentLeader={this.state.currentLeader}
           />
 
-          {fetching && <LoaderTransaction />}
-
-          {!fetching &&
-            <ResultsForm
-              handleSubmitResults={this.handleSubmitResults}
-            />}
-
           <SContent>
+
+            {fetching && <LoaderTransaction />}
+
+            {!fetching &&
+              <ResultsForm
+                handleSubmitResults={this.handleSubmitResults}
+              />}
 
             {fetching ? (
               <Column center>
@@ -280,7 +278,9 @@ class App extends React.Component<any, any> {
 
             ) : (
               <SLanding center>
+
                 {!this.state.connected && <ConnectButton onClick={this.onConnect} />}
+
               </SLanding>
             )}
 
