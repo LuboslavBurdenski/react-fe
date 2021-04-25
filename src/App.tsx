@@ -260,14 +260,14 @@ class App extends React.Component<any, any> {
             currentLeader={this.state.currentLeader}
           />
 
+          {fetching && <LoaderTransaction />}
+
+          {!fetching &&
+            <ResultsForm
+              handleSubmitResults={this.handleSubmitResults}
+            />}
+
           <SContent>
-
-            {fetching && <LoaderTransaction />}
-
-            {!fetching &&
-              <ResultsForm
-                handleSubmitResults={this.handleSubmitResults}
-              />}
 
             {fetching ? (
               <Column center>
