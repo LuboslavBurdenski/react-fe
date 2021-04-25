@@ -1,7 +1,6 @@
 import * as React from 'react';
 import styled from 'styled-components';
 
-
 const WrapperInputs = styled.div`
   padding: 10px;
   border-radius: 8px;
@@ -49,9 +48,8 @@ class ResultsForm extends React.Component<any, any> {
             ...INITIAL_RESULTS,
         };
         this.handleChange = this.handleChange.bind(this);
-        this.handleSubmitResults = this.handleSubmitResults.bind(this);
+        this.handleSubmit = this.handleSubmit.bind(this);
     }
-
 
     public handleChange = async (e: any) => {
         const name = e.target.name;
@@ -63,39 +61,17 @@ class ResultsForm extends React.Component<any, any> {
         await this.setState({ [name]: value });
     }
 
-
-    public handleSubmitResults = async (e: any) => {
+    public handleSubmit = (e: any) => {
         e.preventDefault();
-         const electionContract = this.props.electionContract;
-
-        const values = Object.values(this.state);
-        const dataArr = [];
-
-        for (const value of values) {
-            console.log(value)
-            dataArr.push(value);
-        }
-
-		await this.setState({ fetching: true });
-    
-		const transaction = await electionContract.submitStateResult(dataArr);
-  
-		await this.setState({ transactionHash: transaction.hash });
-      
-		const transactionReceipt = await transaction.wait();
-        console.log(transactionReceipt)
-		if (transactionReceipt.status !== 1) {
-			// React to failure
-		}		
-    };
-
+        this.props.handleSubmitResults({ ...this.state });
+    }
 
     public render = () => {
         return (
             <WrapperInputs >
                 <div >
 
-                    <form onSubmit={this.handleSubmitResults} className='submit-form'>
+                    <form onSubmit={this.handleSubmit} className='submit-form'>
                         <label htmlFor="state">state</label>
                         <input onChange={this.handleChange} type="text" name="state" id="state" placeholder="Chicago" />
                         <label htmlFor="votesBiden">votes Biden</label>

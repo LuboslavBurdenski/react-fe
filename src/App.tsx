@@ -12,9 +12,13 @@ import Wrapper from './components/Wrapper';
 import Header from './components/Header';
 import Loader from './components/Loader';
 import ResultsForm from './components/ResultForms';
+import LoaderTransaction from './components/LoaderTransaction';
 import ConnectButton from './components/ConnectButton';
 import { Web3Provider } from '@ethersproject/providers';
 import { getChainData } from './helpers/utilities';
+
+
+
 
 const SLayout = styled.div`
   position: relative;
@@ -62,8 +66,6 @@ interface IAppState {
   electionContract: any | null;
   info: any | null;
   currentLeader: number | string,
-  showLeader: boolean,
-  
 }
 
 const INITIAL_STATE: IAppState = {
@@ -77,8 +79,6 @@ const INITIAL_STATE: IAppState = {
   electionContract: null,
   info: null,
   currentLeader: '',
-  showLeader: false,
-  
 };
 
 class App extends React.Component<any, any> {
@@ -92,17 +92,20 @@ class App extends React.Component<any, any> {
     this.state = {
       ...INITIAL_STATE
     };
-
     this.web3Modal = new Web3Modal({
       network: this.getNetwork(),
       cacheProvider: true,
       providerOptions: this.getProviderOptions()
     });
+    this.currentLeader = this.currentLeader.bind(this);
+    this.handleSubmitResults = this.handleSubmitResults.bind(this);
   }
 
-  public componentDidMount() {
+  public async componentDidMount() {
     if (this.web3Modal.cachedProvider) {
-      this.onConnect();
+      await this.onConnect();
+      await this.currentLeader();
+      console.log(this.state.currentLeader)
     }
   }
 
@@ -199,11 +202,46 @@ class App extends React.Component<any, any> {
   public currentLeader = async () => {
     const { electionContract } = this.state;
     const currentLeader = await electionContract.currentLeader();
-    await this.setState({ showLeader: !this.state.showLeader })
     await this.setState({ currentLeader });
+    console.log(this.state.currentLeader)
   };
 
-  
+
+  public handleChange = async (e: any) => {
+    const name = e.target.name;
+    let value = e.target.value;
+    if (name !== 'state') {
+      value = Number(value);
+    }
+    console.log(name)
+    await this.setState({ [name]: value });
+  }
+
+  public handleSubmitResults = async (values: any) => {
+    const { state, votesBiden, votesTrump, stateSeats } = values;
+
+    const { electionContract } = this.state;
+
+    await this.setState({ fetching: true });
+
+    try {
+
+      const transaction = await electionContract.submitStateResult([state, votesBiden, votesTrump, stateSeats]);
+      await this.setState({ transactionHash: transaction.hash });
+      const transactionReceipt = await transaction.wait();
+      console.log(transactionReceipt)
+
+      await this.currentLeader();
+      await this.setState({ fetching: false });
+
+    } catch (e) {
+
+      await this.setState({ fetching: false });
+
+      console.log(e)
+    }
+  };
+
   public render = () => {
     const {
       address,
@@ -211,15 +249,26 @@ class App extends React.Component<any, any> {
       chainId,
       fetching
     } = this.state;
+
     return (
       <SLayout>
         <Column maxWidth={1000} spanHeight>
+
           <Header
             connected={connected}
             address={address}
             chainId={chainId}
             killSession={this.resetApp}
+            currentLeader={this.state.currentLeader}
           />
+
+          {fetching && <LoaderTransaction />}
+
+          {!fetching &&
+            <ResultsForm
+              handleSubmitResults={this.handleSubmitResults}
+            />}
+
           <SContent>
 
             {fetching ? (
@@ -228,18 +277,15 @@ class App extends React.Component<any, any> {
                   <Loader />
                 </SContainer>
               </Column>
+
             ) : (
               <SLanding center>
                 {!this.state.connected && <ConnectButton onClick={this.onConnect} />}
               </SLanding>
             )}
 
-            <button onClick={this.currentLeader}>check leader</button>
-
-            {this.state.showLeader && <section>{this.state.currentLeader}</section>}
-
-              <ResultsForm electionContract={this.state.electionContract}/>
           </SContent>
+
         </Column>
 
       </SLayout>
