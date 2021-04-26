@@ -264,9 +264,8 @@ class App extends React.Component<any, any> {
     try {
       const transaction = await electionContract.submitStateResult([state, votesBiden, votesTrump, stateSeats]);
       await this.setState({ transactionHash: transaction.hash });
-      
       const transactionReceipt = await transaction.wait();
-    
+      console.log(transactionReceipt)
       await this.currentLeader();
       await this.setState({ fetching: false });
 
