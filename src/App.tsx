@@ -52,6 +52,23 @@ const SBalances = styled(SLanding)`
   }
 `;
 
+const ElectionActive = styled.section`
+    .active{
+    font-weight: bold;
+    padding: 3px 30px;
+    margin-top: 25px;
+    border-radius: 5px;
+    background: #6cf36c;
+  }
+  .ended{
+    font-weight: bold;
+    padding: 3px 30px;
+    margin-top: 25px;
+    border-radius: 5px;
+    background: #ff7575;
+  }
+`
+
 interface IAppState {
   fetching: boolean;
   address: string;
@@ -61,10 +78,12 @@ interface IAppState {
   pendingRequest: boolean;
   result: any | null;
   electionContract: any | null;
+  transactionHash: string,
   info: any | null;
   currentLeader: number | string,
   seatsTrump: number,
   seatsBiden: number,
+  electionEnded: boolean,
 }
 
 const INITIAL_STATE: IAppState = {
@@ -76,10 +95,12 @@ const INITIAL_STATE: IAppState = {
   pendingRequest: false,
   result: null,
   electionContract: null,
+  transactionHash: '',
   info: null,
   seatsTrump: 0,
   seatsBiden: 0,
   currentLeader: '',
+  electionEnded: false
 };
 
 class App extends React.Component<any, any> {
@@ -105,8 +126,10 @@ class App extends React.Component<any, any> {
   public async componentDidMount() {
     if (this.web3Modal.cachedProvider) {
       await this.onConnect();
+      const { electionContract } = this.state;
       await this.currentLeader();
-      console.log(this.state.currentLeader)
+      const electionEnded = await electionContract.electionEnded();
+      await this.setState({ electionEnded });
     }
   }
 
@@ -129,16 +152,13 @@ class App extends React.Component<any, any> {
       connected: true,
       electionContract
     });
-
     await this.subscribeToProviderEvents(this.provider);
-
   };
 
   public subscribeToProviderEvents = async (provider: any) => {
     if (!provider.on) {
       return;
     }
-
     provider.on("accountsChanged", this.changedAccount);
     provider.on("networkChanged", this.networkChanged);
     provider.on("close", this.close);
@@ -152,7 +172,6 @@ class App extends React.Component<any, any> {
     if (!provider.off) {
       return;
     }
-
     provider.off("accountsChanged", this.changedAccount);
     provider.off("networkChanged", this.networkChanged);
     provider.off("close", this.close);
@@ -200,6 +219,18 @@ class App extends React.Component<any, any> {
     this.setState({ ...INITIAL_STATE });
   };
 
+  public endElection = async () => {
+    const { electionContract } = this.state;
+    const confirmation =  confirm("End US election");
+    if (confirmation) {
+      await electionContract.endElection();
+      await this.setState({ electionEnded: true });
+    } else {
+      console.log('reject')
+      return;
+    }
+  }
+
   public currentLeader = async () => {
     const { electionContract } = this.state;
     const currentLeader = await electionContract.currentLeader();
@@ -209,24 +240,21 @@ class App extends React.Component<any, any> {
     await this.setState({ seatsBiden });
     await this.setState({ seatsTrump });
     await this.setState({ currentLeader });
-
   };
 
 
   public handleSubmitResults = async (values: any) => {
     const { state, votesBiden, votesTrump, stateSeats } = values;
-
     const { electionContract } = this.state;
 
     await this.setState({ fetching: true });
 
     try {
-
       const transaction = await electionContract.submitStateResult([state, votesBiden, votesTrump, stateSeats]);
       await this.setState({ transactionHash: transaction.hash });
+      console.log(transaction)
       const transactionReceipt = await transaction.wait();
       console.log(transactionReceipt)
-
       await this.currentLeader();
       await this.setState({ fetching: false });
 
@@ -249,7 +277,6 @@ class App extends React.Component<any, any> {
     return (
       <SLayout>
         <Column maxWidth={1000} spanHeight>
-
           <Header
             connected={connected}
             address={address}
@@ -259,6 +286,9 @@ class App extends React.Component<any, any> {
             seatsTrump={this.state.seatsTrump}
             currentLeader={this.state.currentLeader}
           />
+          
+          {fetching && this.state.transactionHash}
+          {fetching && <a href={`https://ropsten.etherscan.io/tx/${this.state.transactionHash}`}>view on ropsten</a>}
 
           {fetching && <LoaderTransaction />}
 
@@ -267,8 +297,18 @@ class App extends React.Component<any, any> {
               handleSubmitResults={this.handleSubmitResults}
             />}
 
-          <SContent>
+          <section>
+            {this.state.electionEnded ?
+              <ElectionActive>
+                <button className='ended'>ended</button>
+              </ElectionActive>
+              :
+              <ElectionActive>
+                <button onClick={this.endElection} className='active'>active</button>
+              </ElectionActive>}
+          </section>
 
+          <SContent>
             {fetching ? (
               <Column center>
                 <SContainer>
@@ -283,12 +323,9 @@ class App extends React.Component<any, any> {
 
               </SLanding>
             )}
-
           </SContent>
-
         </Column>
-
-      </SLayout>
+      </SLayout >
     );
   };
 }
