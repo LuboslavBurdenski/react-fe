@@ -68,7 +68,17 @@ const ElectionActive = styled.section`
     background: #ff7575;
   }
 `
-
+const Error = styled.span`
+  background: #db1766;
+  padding: 5px 50px;
+  border-radius: 8px;
+  color: white;
+  font-weight: bolder;
+  position: absolute;
+  top: 75px;
+  right: 0px;
+  width: 250px;
+`
 interface IAppState {
   fetching: boolean;
   address: string;
@@ -84,6 +94,7 @@ interface IAppState {
   seatsTrump: number,
   seatsBiden: number,
   electionEnded: boolean,
+  error: string
 }
 
 const INITIAL_STATE: IAppState = {
@@ -100,7 +111,8 @@ const INITIAL_STATE: IAppState = {
   seatsTrump: 0,
   seatsBiden: 0,
   currentLeader: '',
-  electionEnded: false
+  electionEnded: false,
+  error: ''
 };
 
 class App extends React.Component<any, any> {
@@ -221,7 +233,7 @@ class App extends React.Component<any, any> {
 
   public endElection = async () => {
     const { electionContract } = this.state;
-    const confirmation =  confirm("End US election");
+    const confirmation = confirm("End US election");
     if (confirmation) {
       await electionContract.endElection();
       await this.setState({ electionEnded: true });
@@ -252,17 +264,18 @@ class App extends React.Component<any, any> {
     try {
       const transaction = await electionContract.submitStateResult([state, votesBiden, votesTrump, stateSeats]);
       await this.setState({ transactionHash: transaction.hash });
-      console.log(transaction)
+      
       const transactionReceipt = await transaction.wait();
-      console.log(transactionReceipt)
+    
       await this.currentLeader();
       await this.setState({ fetching: false });
 
     } catch (e) {
-
       await this.setState({ fetching: false });
-
-      console.log(e)
+      await this.setState({ error: e.error.message.split(': ')[1] });
+      setTimeout(async () => {
+        await this.setState({ error: '' });
+      }, 2000);
     }
   };
 
@@ -277,6 +290,11 @@ class App extends React.Component<any, any> {
     return (
       <SLayout>
         <Column maxWidth={1000} spanHeight>
+
+         {this.state.error && <Error>
+            <span>{this.state.error}</span>
+          </Error>}
+
           <Header
             connected={connected}
             address={address}
@@ -286,9 +304,16 @@ class App extends React.Component<any, any> {
             seatsTrump={this.state.seatsTrump}
             currentLeader={this.state.currentLeader}
           />
-          
-          {fetching && this.state.transactionHash}
-          {fetching && <a href={`https://ropsten.etherscan.io/tx/${this.state.transactionHash}`}>view on ropsten</a>}
+
+          {fetching && <span style={{ color: '#4ad9f9', fontWeight: 'bolder' }}>{this.state.transactionHash}</span>}
+
+          {fetching && <a style={{
+            background: '#4ad9f9',
+            borderRadius: '5px',
+            padding: '5px',
+            fontWeight: 'bold',
+            color: 'white'
+          }} href={`https://ropsten.etherscan.io/tx/${this.state.transactionHash}`}>view on ropsten</a>}
 
           {fetching && <LoaderTransaction />}
 
@@ -318,9 +343,7 @@ class App extends React.Component<any, any> {
 
             ) : (
               <SLanding center>
-
                 {!this.state.connected && <ConnectButton onClick={this.onConnect} />}
-
               </SLanding>
             )}
           </SContent>
